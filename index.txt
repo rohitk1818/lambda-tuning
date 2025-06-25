@@ -1,0 +1,47 @@
+const fs = require('fs');
+const AWS = require('aws-sdk');
+const stepfunctions = new AWS.StepFunctions();
+
+exports.handler = async (input) => {
+  const {
+    lambdaARN,
+    powerValues = [128, 256, 512, 1024],
+    num = 10,
+    strategy = "cost",
+    payload = {},
+    parallelInvocation = true,
+    dryRun = false,
+    cleanup = true,
+    log = false
+  } = input;
+
+  const definition = fs.readFileSync('./states/power-tuning-step-function.json', 'utf8');
+
+  const stateMachine = definition
+    .replace(/LAMBDA_ARN/g, lambdaARN)
+    .replace(/POWER_VALUES/g, JSON.stringify(powerValues))
+    .replace(/NUM/g, num)
+    .replace(/STRATEGY/g, strategy)
+    .replace(/PARALLEL_INVOCATION/g, parallelInvocation)
+    .replace(/DRY_RUN/g, dryRun)
+    .replace(/CLEANUP/g, cleanup)
+    .replace(/LOG/g, log)
+    .replace(/INPUT_PAYLOAD/g, JSON.stringify(payload));
+
+  const stateMachineParams = {
+    definition: stateMachine,
+    roleArn: process.env.POWER_TUNER_ROLE_ARN,
+    name: `PowerTuner-${Date.now()}`
+  };
+
+  const created = await stepfunctions.createStateMachine(stateMachineParams).promise();
+
+  const execution = await stepfunctions.startExecution({
+    stateMachineArn: created.stateMachineArn,
+    input: JSON.stringify(input)
+  }).promise();
+
+  return {
+    executionArn: execution.executionArn
+  };
+};
