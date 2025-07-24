@@ -1,5 +1,42 @@
-From day one, they have seamlessly integrated into the team dynamic, quickly grasped complex workflows, and made meaningful contributions to our ongoing projects.
+import json
+import base64
+import requests
+import os
 
-Their proactive approach to problem-solving, eagerness to learn, and consistent pursuit of practical solutions have not only elevated the quality of our work but also positively influenced the team’s morale. In a short span of time, [Colleague's Name] has proven to be a valuable asset and a dependable team player.
+def lambda_handler(event, context):
+    # Example input — replace with real values or pass via 'event'
+    developer_email = event.get('developer_email', 'sample@example.com')
+    dev_app_name = event.get('dev_app_name', 'sample-app')
 
-Their debut has truly set a benchmark for excellence.
+    # Basic Auth credentials (replace or fetch from Secrets Manager)
+    username = os.environ['BASIC_AUTH_USERNAME']
+    password = os.environ['BASIC_AUTH_PASSWORD']
+    auth_string = f"{username}:{password}"
+    basic_token = base64.b64encode(auth_string.encode()).decode()
+
+    # Apigee endpoint URL
+    url = os.environ['APIGEE_KEY_CREATE_URL']
+
+    # Headers and body
+    headers = {
+        "Authorization": f"Basic {basic_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "developer_email": developer_email,
+        "dev_app_name": dev_app_name
+    }
+
+    # Make the POST request
+    response = requests.post(url, headers=headers, json=payload)
+
+    # Print status code and body for debugging
+    print(f"Status Code: {response.status_code}")
+    print("Response Body:")
+    print(response.text)
+
+    return {
+        "status": "ok",
+        "http_status": response.status_code,
+        "body": response.text
+    }
