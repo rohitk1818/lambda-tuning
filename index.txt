@@ -5,3 +5,18 @@
   <Get assignTo="basic.username" key="username"/>
   <Get assignTo="basic.password" key="password"/>
 </KeyValueMapOperations>
+
+
+<AssignMessage name="SetBasicAuthHeader">
+  <AssignTo createNew="false" transport="http" type="request"/>
+  <AssignVariable>
+    <Name>basic.authHeader</Name>
+    <Template>Basic {base64encode(basic.username + ":" + basic.password)}</Template>
+  </AssignVariable>
+  <Set>
+    <Headers>
+      <Header name="Authorization">{basic.authHeader}</Header>
+    </Headers>
+  </Set>
+</AssignMessage>
+
