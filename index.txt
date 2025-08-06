@@ -1,22 +1,6 @@
-<KeyValueMapOperations name="LoadAuthFromKVM">
-  <Properties>
-    <Property name="mapIdentifier">apigee-auth-kvm</Property>
-  </Properties>
-  <Get assignTo="basic.username" key="username"/>
-  <Get assignTo="basic.password" key="password"/>
-</KeyValueMapOperations>
-
-
-<AssignMessage name="SetBasicAuthHeader">
-  <AssignTo createNew="false" transport="http" type="request"/>
-  <AssignVariable>
-    <Name>basic.authHeader</Name>
-    <Template>Basic {base64encode(basic.username + ":" + basic.password)}</Template>
-  </AssignVariable>
-  <Set>
-    <Headers>
-      <Header name="Authorization">{basic.authHeader}</Header>
-    </Headers>
-  </Set>
+<AssignMessage name="AM-SetKVMName">
+    <AssignVariable>
+        <Name>kvm.name</Name>
+        <Ref>request.queryparam.kvmName</Ref>
+    </AssignVariable>
 </AssignMessage>
-
