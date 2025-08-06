@@ -1,6 +1,29 @@
-<AssignMessage name="AM-SetKVMName">
-    <AssignVariable>
-        <Name>kvm.name</Name>
-        <Ref>request.queryparam.kvmName</Ref>
-    </AssignVariable>
-</AssignMessage>
+// Get the KVM name and key from flow variables
+var kvmName = context.getVariable("kvm_name");  // Set in AssignMessage
+var kvmKey = "auth";  // Static key for now
+
+// Validate input
+if (!kvmName || kvmName.trim() === "") {
+    context.setVariable("kvm.fetch.error", true);
+    context.setVariable("kvm.fetch.error.message", "Missing KVM map name.");
+} else {
+    try {
+        // Get reference to the KVM map (environment scope)
+        var kvmMap = apigee.getKeyValueMap(kvmName, 'environment');
+
+        // Read value from KVM
+        kvmMap.get(kvmKey, function(err, value) {
+            if (err) {
+                context.setVariable("kvm.fetch.error", true);
+                context.setVariable("kvm.fetch.error.message", err.message);
+            } else {
+                // ✅ Set result exactly like the XML assignTo value
+                context.setVariable("private.var_header", value);
+                context.setVariable("kvm.fetch.error", false);
+            }
+        });
+    } catch (e) {
+        context.setVariable("kvm.fetch.error", true);
+        context.setVariable("kvm.fetch.error.message", e.message);
+    }
+}
