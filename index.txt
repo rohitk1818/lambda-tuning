@@ -1,29 +1,13 @@
-// Get the KVM name and key from flow variables
-var kvmName = context.getVariable("kvm_name");  // Set in AssignMessage
-var kvmKey = "auth";  // Static key for now
-
-// Validate input
-if (!kvmName || kvmName.trim() === "") {
-    context.setVariable("kvm.fetch.error", true);
-    context.setVariable("kvm.fetch.error.message", "Missing KVM map name.");
-} else {
-    try {
-        // Get reference to the KVM map (environment scope)
-        var kvmMap = apigee.getKeyValueMap(kvmName, 'environment');
-
-        // Read value from KVM
-        kvmMap.get(kvmKey, function(err, value) {
-            if (err) {
-                context.setVariable("kvm.fetch.error", true);
-                context.setVariable("kvm.fetch.error.message", err.message);
-            } else {
-                // ✅ Set result exactly like the XML assignTo value
-                context.setVariable("private.var_header", value);
-                context.setVariable("kvm.fetch.error", false);
-            }
-        });
-    } catch (e) {
-        context.setVariable("kvm.fetch.error", true);
-        context.setVariable("kvm.fetch.error.message", e.message);
-    }
+var kvmName = context.getVariable("request.queryparam.kvmName");
+if (!kvmName) {
+    throw new Error("KVM name not provided");
 }
+
+// Use apigee.access.get to retrieve key from dynamic KVM
+apigee.access.get(kvmName, 'auth', function (error, value) {
+    if (error) {
+        throw new Error("KVM fetch error: " + error);
+    } else {
+        context.setVariable("private.var_header", value);
+    }
+});
