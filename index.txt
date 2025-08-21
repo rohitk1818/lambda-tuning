@@ -1,13 +1,21 @@
-var kvmName = context.getVariable("request.queryparam.kvmName");
-if (!kvmName) {
-    throw new Error("KVM name not provided");
-}
+Create a professional AWS architecture diagram for the following workflow:
 
-// Use apigee.access.get to retrieve key from dynamic KVM
-apigee.access.get(kvmName, 'auth', function (error, value) {
-    if (error) {
-        throw new Error("KVM fetch error: " + error);
-    } else {
-        context.setVariable("private.var_header", value);
-    }
-});
+Application credentials (key/password) are stored in AWS Secrets Manager.
+
+Every 3 months, an EventBridge rule (scheduled event) triggers the process.
+
+The EventBridge rule invokes an SSM Automation Runbook.
+
+The Runbook executes 3 AWS Lambda functions in sequence:
+
+Call Apigee proxy endpoint to generate a new key-secret pair.
+
+Update the new key-secret pair in Secrets Manager.
+
+Call Apigee proxy endpoint to delete the old key-secret pair.
+
+The Runbook sends success/failure status to an SNS Topic.
+
+Amazon SNS notifies users via email with detailed status.
+
+Use standard AWS icons, show the sequential flow, and clearly label each step. Highlight the rotation cycle (every 3 months) and emphasize the integration between EventBridge, SSM Runbook, Lambda functions, Secrets Manager, and SNS."*
