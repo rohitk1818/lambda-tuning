@@ -1,23 +1,155 @@
----
-schemaVersion: '0.3'
-description: "Triggers Lambda Power Tuning Step Function with preset input"
-assumeRole: "{{ AutomationAssumeRole }}"
-parameters:
-  AutomationAssumeRole:
-    type: String
-    description: "(Required) The ARN of the role that allows automation to trigger the Step Function."
+AWS RDS Cost Optimization: Automated Cleanup of Manual Snapshots
+1. Context / Problem Statement
 
-  StateMachineArn:
-    type: String
-    description: "The ARN of the Power Tuning Step Function"
-  
-  InputPayload:
-    type: String
-    description: "Input JSON to start the execution"
+Amazon RDS allows you to create manual snapshots of your databases for backup and recovery purposes.
 
-mainSteps:
-  - name: invokeStepFunction
-    action: aws:executeStepFunction
-    inputs:
-      StateMachineArn: "{{ StateMachineArn }}"
-      Input: "{{ InputPayload }}"
+Problem:
+
+Manual snapshots have no retention policy by default.
+
+They are stored indefinitely until deleted manually.
+
+While snapshot creation is free, storage of snapshots incurs costs.
+
+Over time, unused or old manual snapshots accumulate, leading to unnecessary storage costs.
+
+Currently, AWS does not provide a built-in mechanism to enforce retention policies for manual snapshots.
+
+This creates a cost-optimization challenge for organizations with frequent snapshot usage.
+
+2. Proposed Solution
+
+We developed an AWS Systems Manager (SSM) Automation Runbook that:
+
+Accepts a user-defined retention period (e.g., 30 days).
+
+Lists all manual RDS snapshots in the account.
+
+Retains snapshots created within the retention window.
+
+Identifies snapshots older than the retention period and deletes them.
+
+Can be scheduled via Amazon EventBridge to run automatically at defined intervals.
+
+This ensures that only relevant manual snapshots are retained, reducing unnecessary storage costs.
+
+3. Automated Snapshots vs. Manual Snapshots
+Feature	Automated Snapshots	Manual Snapshots
+Creation	Automatically created by RDS during backup windows.	Created manually by users or scripts.
+Retention	Defined by backup retention period (1–35 days).	Indefinite (must be deleted manually).
+Cost	Storage costs apply after snapshot creation.	Storage costs apply after snapshot creation.
+Use Case	Daily automated backups for recovery.	Long-term archival, pre-upgrade backups, ad-hoc recovery.
+
+⚠️ Key Point: Automated snapshots have built-in retention, while manual snapshots do not — making manual snapshots the primary source of uncontrolled costs.
+
+4. Architecture / Workflow
+Workflow Steps
+
+Trigger:
+
+EventBridge rule invokes the SSM Automation runbook on a schedule (e.g., daily, weekly).
+
+Execution:
+
+Runbook accepts RetentionPeriod parameter (e.g., 30 days).
+
+Uses DescribeDBSnapshots API to list all manual snapshots.
+
+Compares SnapshotCreateTime with current date minus RetentionPeriod.
+
+Action:
+
+Snapshots within retention are ignored.
+
+Snapshots older than retention are marked for deletion.
+
+Executes DeleteDBSnapshot API call.
+
+Logging & Auditing:
+
+Actions logged in CloudWatch Logs.
+
+Optionally, SNS notifications for deleted snapshots.
+
+Architecture Diagram (Conceptual)
+EventBridge (Scheduled Rule)
+          │
+          ▼
+  SSM Automation Runbook
+          │
+   ┌──────┴─────────┐
+   │                │
+List Snapshots   Compare Retention
+   │                │
+   └─────► Delete Old Snapshots
+
+5. Cost Savings Potential
+
+Snapshot storage costs are calculated based on the size of the data stored.
+
+Example:
+
+1 RDS manual snapshot = 100 GB
+
+AWS Snapshot storage pricing ≈ $0.095 per GB-month (US East 1)
+
+Cost per snapshot per month = 100 × 0.095 = $9.50
+
+Case Study:
+
+50 manual snapshots × 100 GB each = 5,000 GB
+
+Monthly cost = 5,000 × 0.095 = $475
+
+If only 5 snapshots are retained (rest deleted), cost drops to $47.50/month
+
+➡ Potential Savings: $427.50/month ($5,130/year)
+
+6. Configuration & Scheduling
+Runbook Parameters
+Parameters:
+  RetentionPeriod:
+    Type: Integer
+    Description: "Number of days to retain manual snapshots"
+    Default: 30
+
+Scheduling with EventBridge
+
+Open Amazon EventBridge Console.
+
+Create a new Rule with a Schedule Expression (e.g., cron(0 2 * * ? *) for daily at 2 AM).
+
+Target: SSM Automation Runbook.
+
+Pass parameter RetentionPeriod=30.
+
+7. Before vs. After: Cost Scenario
+Scenario	Number of Snapshots	Total Storage (GB)	Monthly Cost	Annual Cost
+Before Optimization	50 snapshots	5,000 GB	$475	$5,700
+After Optimization	5 snapshots	500 GB	$47.50	$570
+
+➡ Annual Savings: $5,130
+
+8. Best Practices for RDS Snapshot Management
+
+Define retention policies for both automated and manual snapshots.
+
+Use tags on snapshots for easier identification and automation.
+
+Schedule cleanups periodically to prevent cost buildup.
+
+Enable cross-region/cross-account copy only when required.
+
+Test recovery from snapshots to ensure data reliability.
+
+9. Conclusion
+
+By automating the cleanup of manual snapshots:
+
+Costs are reduced significantly without compromising backup and recovery needs.
+
+Operational overhead of manual deletion is eliminated.
+
+The solution is scalable, auditable, and customizable to business requirements.
+
+This cost optimization practice ensures efficient use of AWS RDS and aligns with AWS Well-Architected Cost Optimization Pillar.
