@@ -59,3 +59,14 @@ To address the manual inefficiencies, the process is automated using AWS service
      └─> [Lambda 2: Update Secrets Manager] 
      └─> [Lambda 3: Delete old secret via Apigee Proxy] 
      └─> [SNS Topic] → [Email Notification to Users]
+7. Benefits & Outcomes
+
+Eliminates manual effort in secret creation, update, and deletion.
+
+Ensures regular rotation every 3 months.
+
+Reduces human errors in secret handling.
+
+Improves security posture by enforcing automated credential freshness.
+
+Provides transparency with detailed success/failure notifications to users
