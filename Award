@@ -1,1 +1,12 @@
-
+Proposed Solution (Automation)
+To eliminate the challenges of the manual process, we have automated the entire credential management workflow by leveraging APIGEE’s exposed APIs and AWS integration.
+How the Automated Solution Works
+APIGEE Exposed APIs
+APIGEE provides standard APIs such as:
+POST API → to create new credentials (Key ID and Secret).
+DELETE API → to delete old credentials.
+Instead of requiring the app owner to log in to the APIGEE DIY UI, we directly use these APIs for credential management.
+APIGEE Proxy for Automation
+A dedicated proxy is created over the APIGEE endpoints.
+This proxy internally handles both POST (create) and DELETE (remove) credential calls.
+This means the user no longer needs to interact with the DIY UI.
