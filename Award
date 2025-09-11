@@ -1,12 +1,14 @@
-Proposed Solution (Automation)
-To eliminate the challenges of the manual process, we have automated the entire credential management workflow by leveraging APIGEE’s exposed APIs and AWS integration.
-How the Automated Solution Works
-APIGEE Exposed APIs
-APIGEE provides standard APIs such as:
-POST API → to create new credentials (Key ID and Secret).
-DELETE API → to delete old credentials.
-Instead of requiring the app owner to log in to the APIGEE DIY UI, we directly use these APIs for credential management.
-APIGEE Proxy for Automation
-A dedicated proxy is created over the APIGEE endpoints.
-This proxy internally handles both POST (create) and DELETE (remove) credential calls.
-This means the user no longer needs to interact with the DIY UI.
+1. Current Manual Process
+Today, when we want to hit an on-prem API via AWS, we need to create a reverse proxy in Apigee (APG).
+While creating this reverse proxy, we must select an authentication method. APG supports two:
+Okta
+APG Auth
+Our automation applies to the APG Auth method.
+Once the reverse proxy and its respective APG product are created:
+The developer has to go to the APG DIY application.
+Add the proxy inside that application.
+Enter their own credentials.
+Then APG DIY generates a Client ID and Client Secret.
+The user copies these values and manually pastes them into AWS Secrets Manager.
+AWS Secrets Manager is then used for authentication in the overall flow.
+👉 Problem: This entire process is manual, repetitive, and error-
